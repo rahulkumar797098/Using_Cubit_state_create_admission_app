@@ -5,23 +5,34 @@ import 'package:student_admission_app_cubit_state/cubit/student_cubit.dart';
 import 'package:student_admission_app_cubit_state/custom_text_field.dart';
 import 'package:student_admission_app_cubit_state/model/student_model.dart';
 
-class AddInfo extends StatefulWidget {
-  const AddInfo({super.key});
+class UpdateScreen extends StatefulWidget {
+  final StudentModel student;
+
+  const UpdateScreen({super.key, required this.student});
 
   @override
-  State<AddInfo> createState() => _AddInfoState();
+  State<UpdateScreen> createState() => _UpdateScreenState();
 }
 
-class _AddInfoState extends State<AddInfo> {
-  TextEditingController nameController = TextEditingController();
-  TextEditingController fatherController = TextEditingController();
-  TextEditingController classController = TextEditingController();
-  TextEditingController dobController = TextEditingController();
+class _UpdateScreenState extends State<UpdateScreen> {
+  late TextEditingController nameController;
+  late TextEditingController fatherController;
+  late TextEditingController classController;
+  late TextEditingController dobController;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.student.name);
+    fatherController = TextEditingController(text: widget.student.father);
+    classController = TextEditingController(text: widget.student.classNam);
+    dobController = TextEditingController(text: widget.student.age);
+  }
 
   Future<void> _selectDate() async {
     DateTime? selectedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateTime.parse(dobController.text.isNotEmpty ? dobController.text : DateTime.now().toString()),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
@@ -37,7 +48,7 @@ class _AddInfoState extends State<AddInfo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Admission Cell"),
+        title: const Text("Update Details"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -191,18 +202,18 @@ class _AddInfoState extends State<AddInfo> {
                         ),
                       ),
                       onPressed: () {
-                          final student = StudentModel(
-                            name: nameController.text,
-                            father: fatherController.text,
-                            age: dobController.text,
-                            classNam: classController.text,
-                          );
-                          context.read<StudentCubit>().addStudent(student);
-                          Navigator.pop(context);
-                        }
-                      ,
+                        final updatedStudent = StudentModel(
+                          id: widget.student.id, // Pass the ID for updating the correct record
+                          name: nameController.text,
+                          father: fatherController.text,
+                          age: dobController.text,
+                          classNam: classController.text,
+                        );
+                        context.read<StudentCubit>().updateStudent(updatedStudent); // Call update method
+                        Navigator.pop(context);
+                      },
                       child: const Text(
-                        "+ Admission",
+                        "Update",
                         style: TextStyle(fontSize: 20),
                       ),
                     ),

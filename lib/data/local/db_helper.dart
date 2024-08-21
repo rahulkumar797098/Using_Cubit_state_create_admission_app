@@ -5,73 +5,74 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../model/student_model.dart';
 
+
+
 class DBHelper {
-  DBHelper._();
+  DBHelper._privateConstructor();
+  static final DBHelper instance = DBHelper._privateConstructor();
 
-  static final DBHelper getInstance = DBHelper._();
+  static const String studentTable = "StudentData";
+  static const String columnId = "id";
+  static const String columnName = "name";
+  static const String columnFather = "father";
+  static const String columnAge = "age";
+  static const String columnClassNam = "class_nam";
 
-  static final String tableStudent = "studentData";
-  static final String columnStudentId = "id";
-  static final String columnName = "name";
-  static final String columnFather = "father";
-  static final String columnAge = "age";
-  static final String columnClassNam = "classNam";
+  Database? _database;
 
-  Database? myDB;
-
-  Future<Database> getDb() async {
-    myDB ??= await openDb();
-    return myDB!;
+  Future<Database> get _db async {
+    if (_database != null) return _database!;
+    _database = await _openDb();
+    return _database!;
   }
 
-  Future<Database> openDb() async {
+  Future<Database> _openDb() async {
     Directory appDirectory = await getApplicationDocumentsDirectory();
-    String rootPath = appDirectory.path;
-    String dbPath = join(rootPath, "studentData.db");
-
-    return await openDatabase(dbPath, version: 1, onCreate: (db, version) {
-      db.execute(
-          "CREATE TABLE $tableStudent ( $columnStudentId INTEGER PRIMARY KEY AUTOINCREMENT, $columnName TEXT, $columnFather TEXT, $columnAge TEXT, $columnClassNam TEXT )");
-    });
+    String dbPath = join(appDirectory.path, "student.db");
+    return await openDatabase(
+      dbPath,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute("CREATE TABLE $studentTable ("
+            "$columnId INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "$columnName TEXT, "
+            "$columnFather TEXT, "
+            "$columnAge TEXT, "
+            "$columnClassNam TEXT"
+            ")");
+      },
+    );
   }
 
-  Future<bool> addStudent(StudentModel student) async {
-    var db = await getDb();
-    int rowsAffected = await db.insert(tableStudent, student.toMap());
-    return rowsAffected > 0;
+  Future<int> addStudent(StudentModel student) async {
+    final db = await _db;
+    return await db.insert(studentTable, student.toMap());
   }
 
   Future<List<StudentModel>> getAllStudents() async {
-    var db = await getDb();
-    List<StudentModel> students = [];
-
-    var data = await db.query(tableStudent);
-    for (Map<String, dynamic> eachStudent in data) {
-      StudentModel studentModel = StudentModel.fromMap(eachStudent);
-      students.add(studentModel);
-    }
-
-    return students;
+    final db = await _db;
+    final List<Map<String, dynamic>> maps = await db.query(studentTable);
+    return List.generate(maps.length, (i) {
+      return StudentModel.fromMap(maps[i]);
+    });
   }
 
-  Future<bool> updateStudent({required StudentModel updatedStudent, required int id}) async {
-    var db = await getDb();
-    int rowsAffected = await db.update(
-      tableStudent,
-      updatedStudent.toMap(),
-      where: "$columnStudentId = ?",
-      whereArgs: [id],
+  Future<int> updateStudent(StudentModel student) async {
+    final db = await _db;
+    return await db.update(
+      studentTable,
+      student.toMap(),
+      where: '$columnId = ?',
+      whereArgs: [student.id],
     );
-    return rowsAffected > 0;
   }
 
-  Future<bool> deleteStudent({required int id}) async {
-    var db = await getDb();
-    int rowsAffected = await db.delete(
-      tableStudent,
-      where: "$columnStudentId = ?",
+  Future<int> deleteStudent(int id) async {
+    final db = await _db;
+    return await db.delete(
+      studentTable,
+      where: '$columnId = ?',
       whereArgs: [id],
     );
-    return rowsAffected > 0;
   }
 }
